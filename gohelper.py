@@ -1,9 +1,18 @@
-#!/usr/bin/python
+#!/usr/bin/env python
+"""
+r2-go-helper - a script to assist loading go binaries in radare2
 
-from __future__ import print_function
-import sys
+Copyright (c) 2016 Michael Rodler
+Licensed under MIT License, see LICENCE.
+
+Usage:
+
+    #!pipe python ./gohelper.py
+
+"""
+
 import logging
-from struct import pack, unpack
+import sys
 
 import r2pipe
 
@@ -40,7 +49,11 @@ def setup_logging(console=True, logfile=None, loglevel=logging.INFO,
     return log
 
 
-log = setup_logging(loglevel=logging.DEBUG)
+if '--debug' in sys.argv:
+    loglevel = logging.DEBUG
+else:
+    loglevel = logging.INFO
+log = setup_logging(loglevel=loglevel)
 r2 = r2pipe.open()
 
 BIN_INFO = r2.cmdj('ij')
@@ -97,7 +110,7 @@ def santize_gofunc_name(name):
 def create_runtime_morestack():
     log.info("Attempting to find 'runtime.morestack' function")
     text_seg = get_section_by_name('.text')
-    text_vaddr = text_seg['vaddr']
+    # text_vaddr = text_seg['vaddr']
 
     # This code string appears to work for ELF32 and ELF64 AFAIK
     s = "mov qword [0x1003], 0"
@@ -122,6 +135,7 @@ def create_runtime_morestack():
         log.warning("undefined function at morestack...")
         return None
 
+    offset = runtime_ms['offset']
     log.debug("runtime.morestack begins at 0x{:x}"
               .format(runtime_ms[offset]))
 
@@ -179,7 +193,9 @@ def rename_functions():
 
 
 if __name__ == "__main__":
-    # log.info("We're gonna 'aa' first, this might take a while")
-    # cmd("aa")
+    log.info("We're gonna 'aa' first, this might take a while")
+    cmd("aa")
 
     rename_functions()
+
+    log.info("Done")
